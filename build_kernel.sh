@@ -144,19 +144,18 @@ BUILD_KERNEL()
 		cp arch/arm/boot/zImage /home/steven/Android/Procyon/Kexec-Build/kexec-cwm-test-zip
 		cd /home/steven/Android/Procyon/Kexec-Build
 		./make-kexec-cwm-test-zip.sh
-		cd /home/steven/Android/create_boot.img/
-		git checkout JBDev
-		cp /home/steven/Android/Procyon/arch/arm/boot/zImage /home/steven/Android/create_boot.img/	
+		cd /home/steven/Android/Procyon/Kexec-Build/boot.img
+		cp /home/steven/Android/Procyon/arch/arm/boot/zImage /home/steven/Android/Procyon/Kexec-Build/boot.img	
 		./create_boot.img.sh cm		
-		cp /home/steven/Android/create_boot.img/boot.img /home/steven/Android/zipcreation/Procyon		
-		cd /home/steven/Android/zipcreation/Procyon
+		cp /home/steven/Android/Procyon/Kexec-Build/boot.img/boot.img /home/steven/Android/Procyon/Kexec-Build/update-zip		
+		cd /home/steven/Android/Procyon/Kexec-Build/update-zip
 		rm -f Procyon.zip		
 		zip -r Procyon *
-		cp /home/steven/Android/zipcreation/Procyon/Procyon.zip /home/steven/Dropbox/Public/Procyon
+		cp /home/steven/Android/Procyon/Kexec-Build/update-zip/Procyon.zip /home/steven/Dropbox/Public/Procyon
 		cp /home/steven/Android/Procyon/Kexec-Build/boot_zImage.zip /home/steven/Dropbox/Public/Procyon/
 		cd /home/steven/Android/Procyon/Kexec-Build/
 		rm -rf zImage
-                
+                rm -rf kexec-cwm-test-zip
 	
 }
 
