@@ -19,11 +19,17 @@ DEVICEPATH=device/samsung/epicmtd
 LOCALVERSION_STRING="-$CUSTOMVERSION"
 CUSTOMVERSION="Procyon"
 
+#Test-Toolchain
+TOOLCHAIN=/home/steven/Android/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin
+TOOLCHAIN_PREFIX=arm-eabi-
 
-#TOOLCHAIN=`pwd`/toolchains/android-toolchain-4.4.3/bin
+#Primary-Toolchain
+#TOOLCHAIN=/home/steven/Android/toolchain-4.6.3/bin
 #TOOLCHAIN_PREFIX=arm-linux-androideabi-
-TOOLCHAIN=/home/steven/Android/arm-linux-androideabi-4.6/bin
-TOOLCHAIN_PREFIX=arm-linux-androideabi-
+
+#Secondary-Toolchain
+#TOOLCHAIN=/home/steven/Android/arm-linux-androideabi-4.6/bin
+#TOOLCHAIN_PREFIX=arm-linux-androideabi-
 
 
 # Detect host OS
@@ -156,7 +162,9 @@ BUILD_KERNEL()
 		cd /home/steven/Android/Procyon/Kexec-Build/
 		rm -rf zImage
                 rm -rf kexec-cwm-test-zip
-	
+		cd /home/steven/Dropbox/Public/Procyon/
+		md5sum Procyon.zip
+		md5sum boot_zImage.zip
 }
 
 # print title

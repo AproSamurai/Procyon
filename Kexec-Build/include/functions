@@ -2,7 +2,7 @@
 
 find_toolchain() {
 DEVICEPATH=device/samsung/epicmtd
-TOOLCHAINPATH=/toolchain/arm-eabi-4.4.3/bin
+TOOLCHAINPATH=/home/steven/Android/toolchain-4.6.3/bin
 CMSEARCHPATH="../../.."
 unset CMBASEPATH
 
