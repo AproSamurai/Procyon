@@ -14,12 +14,12 @@ TARGET_LOCALE="vzw"
 
 #uncomment to add custom version string
 export KBUILD_BUILD_VERSION="$CUSTOMVERSION"
-INITRAMFS_SOURCE="/home/steven/Android/Procyon/usr/epicmtd_initramfs"
 DEFCONFIG_STRING=cyanogenmod_epicmtd_defconfig
+INITRAMFS_SOURCE="/home/steven/Android/Procyon/usr/epicmtd_initramfs"
 DEVICEPATH=device/samsung/epicmtd
 #TOOLCHAINPATH=/toolchain/arm-eabi-4.4.3/bin
 LOCALVERSION_STRING="-$CUSTOMVERSION"
-CUSTOMVERSION="Procyon"
+CUSTOMVERSION="Procyon-X-"
 
 #Test-Toolchain
 TOOLCHAIN=/home/steven/Android/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin
