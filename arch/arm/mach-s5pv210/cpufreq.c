@@ -86,6 +86,16 @@ static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 	{0, CPUFREQ_TABLE_END},
 };
 
+static u32 sAPLL_confs[] = {
+	APLL_VAL_1200,
+	APLL_VAL_1000,
+	APLL_VAL_800,
+	APLL_VAL_800,
+	APLL_VAL_800,
+	APLL_VAL_800,
+	APLL_VAL_800,
+};
+
 static struct regulator *arm_regulator;
 static struct regulator *internal_regulator;
 
@@ -275,7 +285,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			  unsigned int relation)
 {
 	unsigned long reg;
-	unsigned int index, priv_index;
+	unsigned int index;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
 	unsigned int arm_volt, int_volt;
@@ -318,13 +328,6 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	if (freqs.new == freqs.old)
 		goto out;
 
-	/* Finding current running level index */
-	if (cpufreq_frequency_table_target(policy, s5pv210_freq_table,
-					   freqs.old, relation, &priv_index)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	arm_volt = dvs_conf[index].arm_volt;
 	int_volt = dvs_conf[index].int_volt;
 
@@ -346,11 +349,13 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	/* Check if there need to change PLL */
-	if ((index <= L0) || (priv_index <= L0))
+	if ((index <= L0) || (freqs.old >= s5pv210_freq_table[L0].frequency))
+		pll_changing = 1;
+	     else if ((index == L1) || (freqs.old == s5pv210_freq_table[L1].frequency))   // 800MHz
 		pll_changing = 1;
 
 	/* Check if there need to change System bus clock */
-	if ((index == L4) || (priv_index == L4))
+	if ((index == L4) || (freqs.old == s5pv210_freq_table[L4].frequency))
 		bus_speed_changing = 1;
 
 	if (bus_speed_changing) {
@@ -468,13 +473,13 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		switch (index) {
 		case LM1:
 			/* APLL FOUT becomes 1200 Mhz */
-			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
+			__raw_writel(sAPLL_confs[index], S5P_APLL_CON);
 			break;
 		case L0:
-			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
+			__raw_writel(sAPLL_confs[index], S5P_APLL_CON);
 			break;
 		default:
-			__raw_writel(APLL_VAL_800, S5P_APLL_CON);
+			__raw_writel(sAPLL_confs[index], S5P_APLL_CON);
 			break;
 		}
 
@@ -739,11 +744,12 @@ static struct cpufreq_driver s5pv210_driver = {
 	.get		= s5pv210_getspeed,
 	.init		= s5pv210_cpu_init,
 	.name		= "s5pv210",
+	.attr		= s5pv210_cpufreq_attr,
 #ifdef CONFIG_PM
 	.suspend	= s5pv210_cpufreq_suspend,
 	.resume		= s5pv210_cpufreq_resume,
 #endif
-	.attr		= s5pv210_cpufreq_attr,
+
 };
 
 static struct notifier_block s5pv210_cpufreq_notifier = {
