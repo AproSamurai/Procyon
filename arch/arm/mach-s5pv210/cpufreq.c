@@ -72,6 +72,16 @@ enum s5pv210_dmc_port {
 	DMC1,
 };
 
+enum perf_level {
+     L0 = 0, // 1.0 GHz
+     L1,     // 800 MHz
+     L2,     // 400 MHz
+     L3,     // 200 MHz
+     L4,     // 100 MHz
+
+  MAX_PERF_LEVEL = L4,
+};
+
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 	{L0, 1000*1000},
 	{L1, 800*1000},

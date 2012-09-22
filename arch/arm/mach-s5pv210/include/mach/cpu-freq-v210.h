@@ -26,15 +26,16 @@ struct s5pv210_cpufreq_data {
 	unsigned int			size;
 };
 
-enum perf_level {
-	LM1 = 0, // 1.2GHz	
-	L0,	// 1GHz
-	L1,	// 800MHz
-	L2,	// 400MHz
-	L3,	// 200MHz
-	L4,	// 100MHz
-	MAX_PERF_LEVEL = L4,
-};
+/* enum perf_level returned to cpufreq.c */
+// enum perf_level {
+//	LM1 = 0, // 1.2GHz	
+//	L0,	// 1GHz
+//	L1,	// 800MHz
+//	L2,	// 400MHz
+//	L3,	// 200MHz
+//	L4,	// 100MHz
+//	MAX_PERF_LEVEL = L4,
+// };
 
 extern void s5pv210_cpufreq_set_platdata(struct s5pv210_cpufreq_data *pdata);
 
