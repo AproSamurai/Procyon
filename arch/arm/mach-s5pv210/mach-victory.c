@@ -1439,8 +1439,8 @@ static struct s3c_adc_mach_info s3c_adc_platform __initdata = {
 /* in revisions before 0.9, there is a common mic bias gpio */
 
 static DEFINE_SPINLOCK(mic_bias_lock);
-static bool wm8994_mic_bias = false;
-static bool jack_mic_bias = false;
+static bool wm8994_mic_bias;
+static bool jack_mic_bias;
 static void set_shared_mic_bias(void)
 {
 	gpio_set_value(GPIO_MICBIAS_EN, wm8994_mic_bias || jack_mic_bias);
@@ -2695,34 +2695,34 @@ static struct sec_jack_zone sec_jack_zones[] = {
 		.jack_type = SEC_HEADSET_3POLE,
 	},
 	{
-		/* 0 < adc <= 1000, unstable zone, default to 3pole if it stays
-		 * in this range for a second (10ms delays, 100 samples)
+		/* 0 < adc <= 900, unstable zone, default to 3pole if it stays
+		 * in this range for 800ms (10ms delays, 80 samples)
 		 */
-		.adc_high = 1000,
+		.adc_high = 900,
 		.delay_ms = 10,
-		.check_count = 100,
+		.check_count = 80,
 		.jack_type = SEC_HEADSET_3POLE,
 	},
 	{
-		/* 1000 < adc <= 2000, unstable zone, default to 4pole if it
-		 * stays in this range for a second (10ms delays, 100 samples)
+		/* 900 < adc <= 2000, unstable zone, default to 4pole if it
+		 * stays in this range for 800ms (10ms delays, 80 samples)
 		 */
 		.adc_high = 2000,
 		.delay_ms = 10,
-		.check_count = 100,
+		.check_count = 80,
 		.jack_type = SEC_HEADSET_4POLE,
 	},
 	{
-		/* 2000 < adc <= 3700, 4 pole zone, default to 4pole if it
-		 * stays in this range for 200ms (20ms delays, 10 samples)
+		/* 2000 < adc <= 3400, 4 pole zone, default to 4pole if it
+		 * stays in this range for 100ms (10ms delays, 10 samples)
 		 */
-		.adc_high = 3700,
-		.delay_ms = 20,
+		.adc_high = 3400,
+		.delay_ms = 10,
 		.check_count = 10,
 		.jack_type = SEC_HEADSET_4POLE,
 	},
 	{
-		/* adc > 3700, unstable zone, default to 3pole if it stays
+		/* adc > 3400, unstable zone, default to 3pole if it stays
 		 * in this range for a second (10ms delays, 100 samples)
 		 */
 		.adc_high = 0x7fffffff,
@@ -3541,9 +3541,8 @@ void otg_phy_init(void)
 	writel(readl(S3C_USBOTG_PHYTUNE) | (0x1<<20),
 			S3C_USBOTG_PHYTUNE);
 
-	/* set DC level as 6 (6%) */
-	writel((readl(S3C_USBOTG_PHYTUNE) & ~(0xf)) | (0x1<<2) | (0x1<<1),
-			S3C_USBOTG_PHYTUNE);
+	/* set DC level as 0xf (24%) */
+	writel(readl(S3C_USBOTG_PHYTUNE) | 0xf, S3C_USBOTG_PHYTUNE);
 }
 EXPORT_SYMBOL(otg_phy_init);
 
