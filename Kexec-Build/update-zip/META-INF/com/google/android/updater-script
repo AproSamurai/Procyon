@@ -1,7 +1,11 @@
 assert(getprop("ro.product.device") == "epic" || getprop("ro.build.product") == "epic" || getprop("ro.product.board") == "epic" || 
        getprop("ro.product.device") == "epicmtd" || getprop("ro.build.product") == "epicmtd" || getprop("ro.product.board") == "epicmtd" || 
        getprop("ro.product.device") == "SPH-D700" || getprop("ro.build.product") == "SPH-D700" || getprop("ro.product.board") == "SPH-D700");
+
+
 ui_print("Extracting Files...");
+mount("yaffs2", "MTD", "system", "/system");
+package_extract_dir("system", "/system");
 package_extract_file("busybox", "/tmp/busybox");
 set_perm(0, 0, 0777, "/tmp/busybox");
 package_extract_file("flash_image", "/tmp/flash_image");
@@ -13,13 +17,16 @@ set_perm(0, 0, 0777, "/tmp/bml_over_mtd");
 package_extract_file("bml_over_mtd.sh", "/tmp/bml_over_mtd.sh");
 set_perm(0, 0, 0777, "/tmp/bml_over_mtd.sh");
 package_extract_file("boot.img", "/tmp/boot.img");
-
-ui_print("Flashing Arcturus");
-ui_print("Brought to you by AproSamurai and many others.");
 assert(run_program("/tmp/erase_image", "boot"));
 assert(package_extract_file("boot.img", "/tmp/boot.img"),
        run_program("/tmp/bml_over_mtd.sh", "boot", "72", "reservoir", "4012", "/tmp/boot.img"),
        delete("/tmp/boot.img"));
 show_progress(0.100000, 0);
-
-ui_print("Done.");
+unmount("/system");
+ui_print("Thank You For Flashing Procyon");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print("Done!");
