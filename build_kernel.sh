@@ -168,6 +168,7 @@ BUILD_KERNEL()
 		md5sum Procyon.zip
 		md5sum boot_zImage.zip
 
+
 		cp /home/steven/Android/Procyon/crypto/ansi_cprng.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
 		cp /home/steven/Android/Procyon/drivers/net/wireless/wimax/cmc7xx_sdio.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
 
@@ -178,10 +179,13 @@ BUILD_KERNEL()
 		cp /home/steven/Android/Procyon/crypto/ansi_cprng.ko /home/steven/Android/modules
 		cp /home/steven/Android/Procyon/drivers/net/wireless/wimax/cmc7xx_sdio.ko /home/steven/Android/modules
 
-		cp /home/steven/Android/Procyon/drivers/scsi/scsi_wait_scan.ko /home/steven/Android/modules
+		cp /home/steven/Android/Procyon/crypto/ansi_cprng.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
+		cp /home/steven/Android/Procyon/drivers/net/wireless/wimax/cmc7xx_sdio.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
 
-		cp /home/steven/Android/Procyon/drivers/motor/vibrator.ko /home/steven/Android/modules
 
+		cp /home/steven/Android/Procyon/drivers/scsi/scsi_wait_scan.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
+
+		cp /home/steven/Android/Procyon/drivers/motor/vibrator.ko /home/steven/Android/Procyon/Kexec-Build/update-zip/system/lib/modules
 
 
 MODULEPATH=`pwd`/../modules
