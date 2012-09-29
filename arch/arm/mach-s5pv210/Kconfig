@@ -89,7 +89,7 @@ endchoice
 config S5PV210_CORESIGHT
 	bool "Coresight"
 	select OC_ETM
-	default y
+	default n
 	help
 	  Support embedded trace cell
 

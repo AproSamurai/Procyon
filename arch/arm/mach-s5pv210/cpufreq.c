@@ -32,7 +32,8 @@ static struct clk *dmc1_clk;
 static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
 
-/* APLL M,P,S values for 1G/800Mhz */
+/* APLL M,P,S values for 1.2G/1G/800Mhz */
+#define APLL_VAL_1200   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
@@ -72,7 +73,11 @@ enum s5pv210_dmc_port {
 	DMC1,
 };
 
+/* Set initial max frequency to stock maximum (1.0GHz). */
+static const unsigned int DEFAULT_MAX_FREQ = 1000*1000;
+
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
+	{LM1, 1200*1000},
 	{L0, 1000*1000},
 	{L1, 800*1000},
 	{L2, 400*1000},
@@ -102,35 +107,42 @@ const unsigned long arm_volt_max = 1350000;
 const unsigned long int_volt_max = 1250000;
 
 static struct s5pv210_dvs_conf dvs_conf[] = {
-	[L0] = {
+	[LM1] = { /* 1.2GHz */
+		.arm_volt   = 1300000,
+		.int_volt   = 1125000,
+	},
+	[L0] = { /* 1.0GHz */
 		.arm_volt   = 1250000,
 		.int_volt   = 1100000,
 	},
-	[L1] = {
+	[L1] = { /* 800MHz */
 		.arm_volt   = 1200000,
 		.int_volt   = 1100000,
 	},
-	[L2] = {
+	[L2] = { /* 400MHz */
 		.arm_volt   = 1050000,
 		.int_volt   = 1100000,
 	},
-	[L3] = {
+	[L3] = { /* 200MHz */
 		.arm_volt   = 950000,
 		.int_volt   = 1100000,
 	},
-	[L4] = {
+	[L4] = { /* 100MHz */
 		.arm_volt   = 950000,
 		.int_volt   = 1000000,
 	},
 };
 
-static u32 clkdiv_val[5][11] = {
+static u32 clkdiv_val[][11] = {
 	/*
 	 * Clock divider value for following
 	 * { APLL, A2M, HCLK_MSYS, PCLK_MSYS,
 	 *   HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
 	 *   ONEDRAM, MFC, G3D }
 	 */
+
+	/* LM1 : [1200/200/200/100][166/83][133/66][200/200] */
+	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
 
 	/* L0 : [1000/200/100][166/83][133/66][200/200] */
 	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
@@ -335,7 +347,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	/* Check if there need to change PLL */
-	if ((index >= L0) || (priv_index == L0))
+	if ((index <= L0) || (priv_index <= L0))
 		pll_changing = 1;
 	else if ((index == L1) || (priv_index == L1))   // 800MHz
 		pll_changing = 1;
@@ -456,10 +468,18 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		 * 6-1. Set PMS values
 		 * 6-2. Wait untile the PLL is locked
 		 */
-		if (index == L0)
+		switch (index) {
+		case LM1:
+			/* APLL FOUT becomes 1200 Mhz */
+			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
+			break;
+		case L0:
 			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
-		else
+			break;
+		default:
 			__raw_writel(APLL_VAL_800, S5P_APLL_CON);
+			break;
+		}
 
 		do {
 			reg = __raw_readl(S5P_APLL_CON);
@@ -590,6 +610,7 @@ static int check_mem_type(void __iomem *dmc_reg)
 static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 {
 	unsigned long mem_type;
+	int res;
 
 	cpu_clk = clk_get(NULL, "armclk");
 	if (IS_ERR(cpu_clk))
@@ -647,7 +668,8 @@ static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,
 		unsigned long event, void *ptr)
 {
-	int ret;
+	struct cpufreq_policy *policy;
+	int ret = -EINVAL;
 
 	switch (event) {
 	case PM_SUSPEND_PREPARE:
@@ -658,8 +680,15 @@ static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,
 		return NOTIFY_OK;
 	case PM_POST_RESTORE:
 	case PM_POST_SUSPEND:
-		cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
-				ENABLE_FURTHER_CPUFREQ);
+		if ((policy = cpufreq_cpu_get(0)) == NULL)
+			return NOTIFY_OK;
+		cpufreq_driver_target(policy, SLEEP_FREQ, ENABLE_FURTHER_CPUFREQ);
+		cpufreq_cpu_put(policy);
+
+		/* Reevaluate the user-specified cpufreq policy, which reverts the
+		 * forced SLEEP_FREQ used during suspend. */
+		cpufreq_update_policy(0);
+
 		return NOTIFY_OK;
 	}
 	return NOTIFY_DONE;
@@ -717,11 +746,11 @@ static struct cpufreq_driver s5pv210_driver = {
 	.get		= s5pv210_getspeed,
 	.init		= s5pv210_cpu_init,
 	.name		= "s5pv210",
+	.attr		= s5pv210_cpufreq_attr,
 #ifdef CONFIG_PM
 	.suspend	= s5pv210_cpufreq_suspend,
 	.resume		= s5pv210_cpufreq_resume,
 #endif
-	.attr		= s5pv210_cpufreq_attr,
 };
 
 static struct notifier_block s5pv210_cpufreq_notifier = {
