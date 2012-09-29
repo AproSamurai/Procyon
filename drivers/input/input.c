@@ -28,11 +28,28 @@
 #include <linux/rcupdate.h>
 #include "input-compat.h"
 
+#ifdef CONFIG_INPUT_USE_PSEUDO_HARD_RESET
+#include <linux/kernel_sec_common.h>
+#endif // CONFIG_INPUT_USE_PSEUDO_HARD_RESET
+
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("Input core");
 MODULE_LICENSE("GPL");
 
 #define INPUT_DEVICES	256
+
+#ifdef CONFIG_KEYPAD_S3C_EXPORT_HARDRESET_KEYS
+#define KERNEL_SEC_HARDRESET_KEY1 kernel_sec_hardreset_key1
+#define KERNEL_SEC_HARDRESET_KEY2 kernel_sec_hardreset_key2
+#define KERNEL_SEC_HARDRESET_KEY3 kernel_sec_hardreset_key3
+unsigned long kernel_sec_hardreset_key1 = KERNEL_SEC_HARDRESET_KEY1_DEFAULT;
+unsigned long kernel_sec_hardreset_key2 = KERNEL_SEC_HARDRESET_KEY2_DEFAULT;
+unsigned long kernel_sec_hardreset_key3 = KERNEL_SEC_HARDRESET_KEY3_DEFAULT;
+#else
+#define KERNEL_SEC_HARDRESET_KEY1 KERNEL_SEC_HARDRESET_KEY1_DEFAULT
+#define KERNEL_SEC_HARDRESET_KEY2 KERNEL_SEC_HARDRESET_KEY2_DEFAULT
+#define KERNEL_SEC_HARDRESET_KEY3 KERNEL_SEC_HARDRESET_KEY3_DEFAULT
+#endif // CONFIG_KEYPAD_S3C_EXPORT_HARDRESET_KEYS
 
 static LIST_HEAD(input_dev_list);
 static LIST_HEAD(input_handler_list);
@@ -46,6 +63,33 @@ static LIST_HEAD(input_handler_list);
 static DEFINE_MUTEX(input_mutex);
 
 static struct input_handler *input_table[8];
+
+#ifdef CONFIG_INPUT_USE_PSEUDO_HARD_RESET
+static void input_chk_hardreset(unsigned int code, int value)
+{
+	static int reset_key1 = 0, reset_key2 = 0, reset_key3 = 0;
+	if(value)
+	{
+		if(code == KERNEL_SEC_HARDRESET_KEY1)
+			reset_key1 = 1;
+		else if(code == KERNEL_SEC_HARDRESET_KEY2)
+			reset_key2 = 1;
+		else if(code == KERNEL_SEC_HARDRESET_KEY3)
+			reset_key3 = 1;
+		if(reset_key1 && reset_key2 && reset_key3) {
+			kernel_sec_hw_reset(true);
+			//reboot(LINUX_REBOOT_CMD_RESTART);
+		}
+	} else {
+		if(code == KERNEL_SEC_HARDRESET_KEY1)
+			reset_key1 = 0;
+		else if(code == KERNEL_SEC_HARDRESET_KEY2)
+			reset_key2 = 0;
+		else if(code == KERNEL_SEC_HARDRESET_KEY3)
+			reset_key3 = 0;
+	}
+}
+#endif // CONFIG_INPUT_USE_PSEUDO_HARD_RESET
 
 static inline int is_event_supported(unsigned int code,
 				     unsigned long *bm, unsigned int max)
@@ -348,6 +392,17 @@ void input_event(struct input_dev *dev,
 		 unsigned int type, unsigned int code, int value)
 {
 	unsigned long flags;
+
+#ifdef CONFIG_INPUT_USE_PSEUDO_HARD_RESET
+	if((dev->name) != 0) {
+		if(strcmp(dev->name, "s3c-keypad") == 0 ||
+				strcmp(dev->name, "victory-keypad") == 0)
+		{
+			// Checking Hard Reset Condition
+			input_chk_hardreset(code, value);
+		}
+	}
+#endif // CONFIG_INPUT_USE_PSEUDO_HARD_RESET
 
 	if (is_event_supported(type, dev->evbit, EV_MAX)) {
 
