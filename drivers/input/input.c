@@ -30,6 +30,7 @@
 
 #ifdef CONFIG_INPUT_USE_PSEUDO_HARD_RESET
 #include <linux/kernel_sec_common.h>
+#include <plat/watchdog-reset.h>
 #endif // CONFIG_INPUT_USE_PSEUDO_HARD_RESET
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
@@ -77,8 +78,7 @@ static void input_chk_hardreset(unsigned int code, int value)
 		else if(code == KERNEL_SEC_HARDRESET_KEY3)
 			reset_key3 = 1;
 		if(reset_key1 && reset_key2 && reset_key3) {
-			kernel_sec_hw_reset(true);
-			//reboot(LINUX_REBOOT_CMD_RESTART);
+			arch_wdt_reset();
 		}
 	} else {
 		if(code == KERNEL_SEC_HARDRESET_KEY1)
