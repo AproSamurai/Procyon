@@ -39,7 +39,7 @@ static DEFINE_MUTEX(set_freq_lock);
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
-#define SLEEP_FREQ	(800*1000) /* Use 800MHz when entering sleep */
+#define SLEEP_FREQ	(800 * 1000) /* Use 800MHz when entering sleep */
 
 /*
  * relation has an additional symantics other than the standard of cpufreq
@@ -278,7 +278,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			  unsigned int relation)
 {
 	unsigned long reg;
-	unsigned int index, priv_index;
+	unsigned int index;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
 	unsigned int arm_volt, int_volt;
@@ -321,13 +321,6 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	if (freqs.new == freqs.old)
 		goto out;
 
-	/* Finding current running level index */
-	if (cpufreq_frequency_table_target(policy, s5pv210_freq_table,
-					   freqs.old, relation, &priv_index)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	arm_volt = dvs_conf[index].arm_volt;
 	int_volt = dvs_conf[index].int_volt;
 
@@ -349,13 +342,13 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	/* Check if there need to change PLL */
-	if ((index <= L0) || (priv_index <= L0))
+	if ((index <= L0) || (freqs.old >= s5pv210_freq_table[L0].frequency))
 		pll_changing = 1;
-	else if ((index == L1) || (priv_index == L1))   // 800MHz
+	else if ((index == L1) || (freqs.old == s5pv210_freq_table[L1].frequency))   // 800MHz
 		pll_changing = 1;
 
 	/* Check if there need to change System bus clock */
-	if ((index == L4) || (priv_index == L4))
+	if ((index == L4) || (freqs.old == s5pv210_freq_table[L4].frequency))
 		bus_speed_changing = 1;
 
 	if (bus_speed_changing) {
