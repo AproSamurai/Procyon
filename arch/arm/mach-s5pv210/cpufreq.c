@@ -32,12 +32,14 @@ static struct clk *dmc1_clk;
 static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
 
+
+
 /* APLL M,P,S values for 1.2G/1G/800Mhz */
 #define APLL_VAL_1200   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
-#define SLEEP_FREQ	(800 * 1000) /* Use 800MHz when entering sleep */
+#define SLEEP_FREQ	(800*1000) /* Use 800MHz when entering sleep */
 
 /*
  * relation has an additional symantics other than the standard of cpufreq
@@ -112,7 +114,7 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		.int_volt   = 1125000,
 	},
 	[L0] = { /* 1.0GHz */
-		.arm_volt   = 1250000,
+		.arm_volt   = 1275000,
 		.int_volt   = 1100000,
 	},
 	[L1] = { /* 800MHz */
@@ -154,7 +156,7 @@ static u32 clkdiv_val[][11] = {
 	{1, 3, 1, 1, 3, 1, 4, 1, 3, 0, 0},
 
 	/* L3 : [200/200/100][166/83][133/66][200/200] */
-	{3, 3, 0, 1, 3, 1, 4, 1, 3, 0, 0},
+	{3, 3, 1, 1, 3, 1, 4, 1, 3, 0, 0},
 
 	/* L4 : [100/100/100][83/83][66/66][100/100] */
 	{7, 7, 0, 0, 7, 0, 9, 0, 7, 0, 0},
