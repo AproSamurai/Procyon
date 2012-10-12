@@ -100,7 +100,7 @@ struct s5pv210_dvs_conf {
 static unsigned int g_dvfs_printk_mask = ~(1<<DVFS_LOCK_TOKEN_PVR) &
                                          ((1<<DVFS_LOCK_TOKEN_NUM)-1);
 static unsigned int g_dvfs_high_lock_token = 0;
-static unsigned int g_dvfs_high_lock_limit = 6;
+static unsigned int g_dvfs_high_lock_limit = MAX_PERF_LEVEL;
 static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 //static DEFINE_MUTEX(dvfs_high_lock);
 #endif
@@ -122,15 +122,15 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		.int_volt   = 1100000,
 	},
 	[L2] = { /* 400MHz */
-		.arm_volt   = 1050000,
+		.arm_volt   = 1100000,
 		.int_volt   = 1100000,
 	},
 	[L3] = { /* 200MHz */
-		.arm_volt   = 950000,
+		.arm_volt   = 1050000,
 		.int_volt   = 1100000,
 	},
 	[L4] = { /* 100MHz */
-		.arm_volt   = 950000,
+		.arm_volt   = 1050000,
 		.int_volt   = 1000000,
 	},
 };
@@ -605,7 +605,7 @@ static int check_mem_type(void __iomem *dmc_reg)
 static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 {
 	unsigned long mem_type;
-	int res;
+	int ret;
 
 	cpu_clk = clk_get(NULL, "armclk");
 	if (IS_ERR(cpu_clk))
@@ -657,7 +657,12 @@ static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 		g_dvfslockval[i] = MAX_PERF_LEVEL;
 #endif
 
-	return cpufreq_frequency_table_cpuinfo(policy, s5pv210_freq_table);
+	 ret = cpufreq_frequency_table_cpuinfo(policy, s5pv210_freq_table);
+	
+	if (!ret)
+		policy->max = 1000000;
+
+	return ret;
 }
 
 static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,
