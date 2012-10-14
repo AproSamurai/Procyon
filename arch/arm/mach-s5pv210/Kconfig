@@ -320,6 +320,11 @@ config DVFS_LIMIT
 	depends on CPU_FREQ
 	default n
 
+config CPU_DIDLE
+	bool "DEEP Idle"
+	depends on CPU_IDLE
+	default y
+
 config POKE_REC_BOOT_MAGIC
 	bool "Flag stage1 init to boot recovery on reboot(..., \"recovery\")"
 	help
