@@ -1,0 +1,19 @@
+AnyKernelEpic - by zman0900
+
+Inspired by AnyKernel by koush, dump_image binary taken as-is from AnyKernel
+
+
+Feel free to use this in your own projects and make any changes as you see fit
+
+INSTRUCTIONS:
+Build your kernel as usual until you have your zImage and any modules.
+Put zImage in zip
+Remove any old modules from zip/system/lib/modules and replace with yours
+Run build_zip.sh to create flashable zip
+
+HOW IT WORKS:
+Previously flashing a kernel required it to be combined with ramdisk from a 
+specific rom.
+This will load ramdisk from phone, take it apart, replace the kernel, then
+reflash it.
+New modules can also be flashed to /system if needed.
