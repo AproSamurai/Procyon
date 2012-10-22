@@ -611,23 +611,39 @@ void mmc_release_host(struct mmc_host *host)
 
 EXPORT_SYMBOL(mmc_release_host);
 
+static int mmc_debug = 0;
 /*
  * Internal function that does the actual ios call to the host driver,
  * optionally printing some debug output.
  */
 static inline void mmc_set_ios(struct mmc_host *host)
 {
+if (mmc_debug) {
+printk(KERN_INFO "XXXXX Entering %s\n", __func__);
+}
 	struct mmc_ios *ios = &host->ios;
 
-	pr_debug("%s: clock %uHz busmode %u powermode %u cs %u Vdd %u "
+if (mmc_debug) {
+	printk(KERN_INFO "%s: clock %uHz busmode %u powermode %u cs %u Vdd %u "
 		"width %u timing %u\n",
 		 mmc_hostname(host), ios->clock, ios->bus_mode,
 		 ios->power_mode, ios->chip_select, ios->vdd,
 		 ios->bus_width, ios->timing);
-
+}
 	if (ios->clock > 0)
+{
+if (mmc_debug) {
+printk(KERN_INFO "XXXX %s: Calling mmc_set_ungated\n", __func__);
+}
 		mmc_set_ungated(host);
+}
+if (mmc_debug) {
+printk(KERN_INFO "XXXX %s: Calling set_ios\n", __func__);
+}
 	host->ops->set_ios(host, ios);
+if (mmc_debug) {
+printk(KERN_INFO "XXXXX Leaving %s\n", __func__);
+}
 }
 
 /*
@@ -1015,8 +1031,10 @@ void mmc_set_driver_type(struct mmc_host *host, unsigned int drv_type)
  */
 static void mmc_power_up(struct mmc_host *host)
 {
+printk(KERN_INFO "XXXXX Entering %s\n", __func__);
 	int bit;
 
+//printk(KERN_INFO "XXXXX %s: Calling mmc_host_clk_hold\n", __func__);
 	mmc_host_clk_hold(host);
 
 	/* If ocr is set, we use it */
@@ -1036,26 +1054,36 @@ static void mmc_power_up(struct mmc_host *host)
 	host->ios.power_mode = MMC_POWER_UP;
 	host->ios.bus_width = MMC_BUS_WIDTH_1;
 	host->ios.timing = MMC_TIMING_LEGACY;
+printk(KERN_INFO "XXXXX %s: 1. Calling mmc_set_ios\n", __func__);
 	mmc_set_ios(host);
 
 	/*
 	 * This delay should be sufficient to allow the power supply
 	 * to reach the minimum voltage.
 	 */
+printk(KERN_INFO "XXXXX %s: Setting delay 1\n", __func__);
 	mmc_delay(10);
+printk(KERN_INFO "XXXXX %s: After delay 1\n", __func__);
 
 	host->ios.clock = host->f_init;
 
 	host->ios.power_mode = MMC_POWER_ON;
+mmc_debug = 1;
+printk(KERN_INFO "XXXXX %s: 2. Calling mmc_set_ios\n", __func__);
 	mmc_set_ios(host);
+mmc_debug = 0;
 
 	/*
 	 * This delay must be at least 74 clock sizes, or 1 ms, or the
 	 * time required to reach a stable voltage.
 	 */
+printk(KERN_INFO "XXXXX %s: Setting delay 2\n", __func__);
 	mmc_delay(10);
+printk(KERN_INFO "XXXXX %s: After delay 2\n", __func__);
 
+printk(KERN_INFO "XXXXX %s: Calling mmc_host_clk_release\n", __func__);
 	mmc_host_clk_release(host);
+printk(KERN_INFO "XXXXX Exiting %s\n", __func__);
 }
 
 void mmc_power_off(struct mmc_host *host)
@@ -1869,18 +1897,24 @@ EXPORT_SYMBOL(mmc_suspend_host);
  */
 int mmc_resume_host(struct mmc_host *host)
 {
+//printk(KERN_INFO "XXXXX Entering %s\n", __func__);
 	int err = 0;
 
 	mmc_bus_get(host);
 	if (mmc_bus_manual_resume(host)) {
+//printk(KERN_INFO "YYYYY %s: Entering mmc_bus_manual_resume\n", __func__);
 		host->bus_resume_flags |= MMC_BUSRESUME_NEEDS_RESUME;
+//printk(KERN_INFO "YYYYY %s: 1: Calling mmc_bus_put\n",__func__);
 		mmc_bus_put(host);
 		return 0;
 	}
-
+//printk(KERN_INFO "YYYYY %s: Checking bus\n", __func__);
 	if (host->bus_ops && !host->bus_dead) {
+printk(KERN_INFO "YYYYY %s: AAAA\n",__func__);
 		if (!mmc_card_keep_power(host)) {
+printk(KERN_INFO "YYYYY %s: Calling mmc_power_up\n",__func__);
 			mmc_power_up(host);
+printk(KERN_INFO "YYYYY %s: Calling mmc_select_voltage\n",__func__);
 			mmc_select_voltage(host, host->ocr);
 			/*
 			 * Tell runtime PM core we just powered up the card,
@@ -1888,16 +1922,23 @@ int mmc_resume_host(struct mmc_host *host)
 			 * Note that currently runtime PM is only enabled
 			 * for SDIO cards that are MMC_CAP_POWER_OFF_CARD
 			 */
+printk(KERN_INFO "YYYYY %s: BBBB\n",__func__);
 			if (mmc_card_sdio(host->card) &&
 			    (host->caps & MMC_CAP_POWER_OFF_CARD)) {
+printk(KERN_INFO "YYYYY %s: Calling pm_runtime_disable\n",__func__);
 				pm_runtime_disable(&host->card->dev);
+printk(KERN_INFO "YYYYY %s: Calling pm_runtime_set_active\n",__func__);
 				pm_runtime_set_active(&host->card->dev);
+printk(KERN_INFO "YYYYY %s: Calling pm_runtime_enable\n",__func__);
 				pm_runtime_enable(&host->card->dev);
 			}
 		}
+printk(KERN_INFO "YYYYY %s: CCCC\n",__func__);
 		BUG_ON(!host->bus_ops->resume);
+printk(KERN_INFO "YYYYY %s: Checking err for resume(host)\n",__func__);
 		err = host->bus_ops->resume(host);
 		if (err) {
+printk(KERN_INFO "YYYYY %s: resume err = %d\n",__func__, err);
 			printk(KERN_WARNING "%s: error %d during resume "
 					    "(card was removed?)\n",
 					    mmc_hostname(host), err);
@@ -1905,8 +1946,10 @@ int mmc_resume_host(struct mmc_host *host)
 		}
 	}
 	host->pm_flags &= ~MMC_PM_KEEP_POWER;
+printk(KERN_INFO "YYYYY %s: 2: Calling mmc_bus_put\n",__func__);
 	mmc_bus_put(host);
 
+printk(KERN_INFO "XXXXX Exiting %s\n", __func__);
 	return err;
 }
 EXPORT_SYMBOL(mmc_resume_host);
