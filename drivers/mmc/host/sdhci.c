@@ -2391,26 +2391,20 @@ EXPORT_SYMBOL_GPL(sdhci_suspend_host);
 
 int sdhci_resume_host(struct sdhci_host *host)
 {
-printk(KERN_INFO "XXXX Entering %s\n",__func__);
 	int ret = 0;
 
 	if (host->vmmc) {
-//printk(KERN_INFO "ZZZZZ %s: host->vmmc",__func__);
 		int ret = regulator_enable(host->vmmc);
 		if (ret)
-{
-//printk(KERN_INFO "ZZZZZ %s: returning regulator_enable\n", __func__);
 			return ret;
-}
 	}
 
-//printk(KERN_INFO "ZZZZ %s: checking host flags\n",__func__);
+
 	if (host->flags & (SDHCI_USE_SDMA | SDHCI_USE_ADMA)) {
 		if (host->ops->enable_dma)
 			host->ops->enable_dma(host);
 	}
 
-//printk(KERN_INFO "ZZZZ %s: checking host irqs\n",__func__);
 	if (host->irq)
 		enable_irq(host->irq);
 
@@ -2420,16 +2414,11 @@ printk(KERN_INFO "XXXX Entering %s\n",__func__);
                 max8893_ldo_enable_direct(5);
         }
 #endif
-
-//printk(KERN_INFO "ZZZZZ %s: Calling sdhci_init\n", __func__);
 	sdhci_init(host, (host->mmc->pm_flags & MMC_PM_KEEP_POWER));
-//printk(KERN_INFO "ZZZZZ %s: Calling mmiowb\n", __func__);
 	mmiowb();
 
-printk(KERN_INFO "ZZZZZ %s: Calling mmc_resume_host\n", __func__);
 	ret = mmc_resume_host(host->mmc);
 
-printk(KERN_INFO "ZZZZZ %s: Enabling card detection\n", __func__);
 	sdhci_enable_card_detection(host);
 #ifdef CONFIG_MACH_VICTORY
 	if (wimax_resume && host->mmc->index == 0)      //  WiMAX: mmc0
@@ -2439,13 +2428,11 @@ printk(KERN_INFO "ZZZZZ %s: Enabling card detection\n", __func__);
         }
 #endif
 
-printk(KERN_INFO "ZZZZ %s: setting re-tuning flag\n",__func__);
 	/* Set the re-tuning expiration flag */
 	if ((host->version >= SDHCI_SPEC_300) && host->tuning_count &&
 	    (host->tuning_mode == SDHCI_TUNING_MODE_1))
 		host->flags |= SDHCI_NEEDS_RETUNING;
 
-printk(KERN_INFO "XXXX Exiting %s\n",__func__);
 	return ret;
 }
 

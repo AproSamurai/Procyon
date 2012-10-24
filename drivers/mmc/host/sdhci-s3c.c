@@ -685,14 +685,12 @@ static int sdhci_s3c_suspend(struct platform_device *dev, pm_message_t pm)
 
 static int sdhci_s3c_resume(struct platform_device *dev)
 {
-printk(KERN_INFO "XXXX Entering %s\n", __func__);
 	struct sdhci_host *host = platform_get_drvdata(dev);
 	struct s3c_sdhci_platdata *pdata = dev->dev.platform_data;
 	u32 ier;
-printk(KERN_INFO "XXXX %s: Calling sdhci_resume_host (%s)\n", __func__,dev_name(dev));
+
 	sdhci_resume_host(host);
 
-printk(KERN_INFO "XXXX %s: After sdhci_resume_host\n", __func__);
 	if (pdata->enable_intr_on_resume) {
 		ier = sdhci_readl(host, SDHCI_INT_ENABLE);
 		ier |= SDHCI_INT_CARD_INT;
@@ -700,7 +698,6 @@ printk(KERN_INFO "XXXX %s: After sdhci_resume_host\n", __func__);
 		sdhci_writel(host, ier, SDHCI_SIGNAL_ENABLE);
 	}
 
-printk(KERN_INFO "XXXX Exiting %s\n", __func__);
 	return 0;
 }
 
