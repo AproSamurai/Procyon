@@ -32,8 +32,7 @@ static struct clk *dmc1_clk;
 static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
 
-/* APLL M,P,S values for 1.2G/1G/800Mhz */
-#define APLL_VAL_1200   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
+/* APLL M,P,S values for 1G/800Mhz */
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
@@ -74,7 +73,6 @@ enum s5pv210_dmc_port {
 };
 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
-	{OC0, 1200*1000},	
 	{L0, 1000*1000},
 	{L1, 800*1000},
 	{L2, 400*1000},
@@ -104,10 +102,6 @@ const unsigned long arm_volt_max = 1350000;
 const unsigned long int_volt_max = 1250000;
 
 static struct s5pv210_dvs_conf dvs_conf[] = {
-	[OC0] = {
-		.arm_volt   = 1300000,
-		.int_volt   = 1125000,
-	},		
 	[L0] = {
 		.arm_volt   = 1250000,
 		.int_volt   = 1100000,
@@ -138,10 +132,6 @@ static u32 clkdiv_val[5][11] = {
 	 *   ONEDRAM, MFC, G3D }
 	 */
 
-	 /* OC0 : [1200/200/100][166/83][133/66][200/200] */
-	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
-
-	
 	/* L0 : [1000/200/100][166/83][133/66][200/200] */
 	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
 
@@ -274,7 +264,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 			  unsigned int relation)
 {
 	unsigned long reg;
-	unsigned int index;
+	unsigned int index, priv_index;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
 	unsigned int arm_volt, int_volt;
@@ -316,6 +306,14 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 
 	if (freqs.new == freqs.old)
 		goto out;
+
+	/* Finding current running level index */
+	if (cpufreq_frequency_table_target(policy, s5pv210_freq_table,
+					   freqs.old, relation, &priv_index)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
 	arm_volt = dvs_conf[index].arm_volt;
 	int_volt = dvs_conf[index].int_volt;
 
@@ -336,15 +334,12 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
-	/* Don't use cpufreq_frequency_table_target() any more as it */
-	/* may not be accurate. Compare against freqs.old instead */
-
 	/* Check if there need to change PLL */
-	if ((index <= L0) || (freqs.old >= s5pv210_freq_table[L0].frequency))
+	if ((index >= L0) || (priv_index == L0))
 		pll_changing = 1;
 
 	/* Check if there need to change System bus clock */
-	if ((index == L4) || (freqs.old == s5pv210_freq_table[L4].frequency))
+	if ((index == L4) || (priv_index == L4))
 		bus_speed_changing = 1;
 
 	if (bus_speed_changing) {
@@ -459,17 +454,10 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		 * 6-1. Set PMS values
 		 * 6-2. Wait untile the PLL is locked
 		 */
-		switch (index) {
-		case OC0:
-			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
-			break;
-		case L0:
+		if (index == L0)
 			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
-			break;
-		default:
+		else
 			__raw_writel(APLL_VAL_800, S5P_APLL_CON);
-			break;
-		}
 
 		do {
 			reg = __raw_readl(S5P_APLL_CON);
@@ -600,7 +588,6 @@ static int check_mem_type(void __iomem *dmc_reg)
 static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 {
 	unsigned long mem_type;
-	int ret;
 
 	cpu_clk = clk_get(NULL, "armclk");
 	if (IS_ERR(cpu_clk))
@@ -652,12 +639,7 @@ static int __init s5pv210_cpu_init(struct cpufreq_policy *policy)
 		g_dvfslockval[i] = MAX_PERF_LEVEL;
 #endif
 
-	 /* Set max freq to 1GHz on startup */
-	ret = cpufreq_frequency_table_cpuinfo(policy, s5pv210_freq_table);
-	policy->min = 100000;
-	policy->max = 1000000;
-
-	return ret;
+	return cpufreq_frequency_table_cpuinfo(policy, s5pv210_freq_table);
 }
 
 static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,

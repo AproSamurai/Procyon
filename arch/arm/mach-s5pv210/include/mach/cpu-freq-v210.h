@@ -14,10 +14,6 @@
 
 #include <linux/cpufreq.h>
 
-enum perf_level {
-	OC0, L0, L1, L2, L3, L4, MAX_PERF_LEVEL = L4,
-};
-
 /* For cpu-freq driver */
 struct s5pv210_cpufreq_voltage {
 	unsigned int	freq;	/* kHz */
@@ -28,6 +24,15 @@ struct s5pv210_cpufreq_voltage {
 struct s5pv210_cpufreq_data {
 	struct s5pv210_cpufreq_voltage	*volt;
 	unsigned int			size;
+};
+
+enum perf_level {
+	L0 = 0,	// 1GHz
+	L1,	// 800MHz
+	L2,	// 400MHz
+	L3,	// 200MHz
+	L4,	// 100MHz
+	MAX_PERF_LEVEL = L4,
 };
 
 #ifdef CONFIG_DVFS_LIMIT
